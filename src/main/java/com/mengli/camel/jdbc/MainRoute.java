@@ -17,24 +17,29 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * Camel route that copy data from one DS/table to another
+ */
 @SuppressWarnings("unchecked")
 @Component
 public class MainRoute extends RouteBuilder {
     @Override
     public void configure() throws Exception {
-        from("timer://foo?period=3000").setBody(constant("SELECT * FROM SOURCE_TABLE")).to("spring-jdbc:srcDataSource")
-                .split(body())
-                .process(e -> {
-                    Map<String, Object> body = e.getIn().getBody(Map.class);
-                    Record r = new Record();
-                    r.id = (Integer) body.get("RECORD_ID");
-                    r.value = (String) body.get("RECORD_VALUE");
-                    r.value += "-Copied";
-                    e.getIn().setBody(r);
-                }).log("Copying ${body}")
-                .setBody(simple(
-                        "INSERT INTO DEST_TABLE(RECORD_ID, RECORD_VALUE) VALUES('${body.id}','${body.value}')"))
-                .to("spring-jdbc:destDataSource");
+        from("timer://foo?period=3000")
+                .setBody(constant("SELECT * FROM SOURCE_TABLE")).to("spring-jdbc:srcDataSource") // Select data from source DS/table
+                .split(body()) // Split result list
+                    .process(e -> { // Convert a record to POJO and perform procecess
+                        Map<String, Object> body = e.getIn().getBody(Map.class);
+                        Record r = new Record();
+                        r.id = (Integer) body.get("RECORD_ID");
+                        r.value = (String) body.get("RECORD_VALUE");
+                        r.value += "-Copied";
+                        e.getIn().setBody(r);
+                    })
+                    .log("Copying ${body}")
+                    .setBody(simple(
+                            "INSERT INTO DEST_TABLE(RECORD_ID, RECORD_VALUE) VALUES('${body.id}','${body.value}')"))
+                    .to("spring-jdbc:destDataSource"); // Insert a record into destination DS/table
     }
 
     @ToString

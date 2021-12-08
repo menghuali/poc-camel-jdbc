@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+/**
+ * Sample of configuring mulitple datasources
+ */
 @SuppressWarnings("all")
 @Configuration
 public class DataSourceConfig {
